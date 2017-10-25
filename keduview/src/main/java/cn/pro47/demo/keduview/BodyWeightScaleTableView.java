@@ -147,6 +147,7 @@ public class BodyWeightScaleTableView extends View {
                 return true;
             }
         });
+        mGesture.setIsLongpressEnabled(false);
     }
 
     public BodyWeightScaleTableView(Context context) {
