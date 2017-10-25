@@ -7,7 +7,11 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Shader;
 import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.util.TypedValue;
@@ -95,6 +99,10 @@ public class BodyWeightScaleTableView extends View {
     private Paint mScaleLinePain;
     private Paint mScaleWeightTextPain;
     /**
+     * 遮罩的画笔
+     */
+    private Paint mForegroundPaint;
+    /**
      * 手势识别器
      */
     private GestureDetector mGesture;
@@ -175,6 +183,8 @@ public class BodyWeightScaleTableView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        int saved = canvas.saveLayer(null, null, Canvas.ALL_SAVE_FLAG);
+
         String weightStr = String.valueOf(bodyWeight / ONE_KG) + "." + String.valueOf(bodyWeight % ONE_KG);
         int canvasWidth = canvas.getWidth();
         int centerX = canvasWidth / 2;
@@ -186,7 +196,8 @@ public class BodyWeightScaleTableView extends View {
         mWeightTextPain.setTextAlign(Paint.Align.CENTER);
         canvas.drawText(weightStr, centerX, textLine, mWeightTextPain);
         mWeightTextPain.setTextSize(textSizeKg);
-        canvas.drawText(KG, centerX + mWeightTextPain.measureText(weightStr), textLine - mWeightTextPain.getFontSpacing() / 2, mWeightTextPain);
+        canvas.drawText(KG, centerX + mWeightTextPain.measureText(weightStr),
+                textLine - mWeightTextPain.getFontSpacing() / 2, mWeightTextPain);
 
         //画刻度基准线
         mScaleLinePain.setStrokeWidth(lineWidthBase);
@@ -229,8 +240,22 @@ public class BodyWeightScaleTableView extends View {
             leftLineX -= scaleTableGWidth;
             rightLineX += scaleTableGWidth;
         }
-        //画出指针
+        //画出中间的指针
         canvas.drawLine(centerX, centerY, centerX, centerY + lineHeightKg, mWeightTextPain);
+
+        //绘制遮罩层，用来进行两端透明度的变化
+        if (mForegroundPaint == null) {
+            initForegroundPaint(canvasWidth);
+        }
+        canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mForegroundPaint);
+
+        canvas.restoreToCount(saved);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        initForegroundPaint(w);
     }
 
     private void drawScaleTable(Canvas canvas, int centerY, float lineX, float currentHandWeight) {
@@ -277,14 +302,12 @@ public class BodyWeightScaleTableView extends View {
         }
         if (mFlingAnim != null) {
             mFlingAnim.cancel();
+            mFlingAnim = null;
         }
         mFlingAnim = ObjectAnimator.ofInt(BodyWeightScaleTableView.this, "bodyWeight", this.bodyWeight, targetWeight);
         mFlingAnim.setInterpolator(mLinearOutSlowInInterpolator);
         mFlingAnim.setDuration(duration);
         mFlingAnim.addUpdateListener(mFlingAnimUpdateListener);
-        mFlingAnim.addListener(new AnimatorListenerAdapter() {
-        });
-
         mFlingAnim.start();
     }
 
@@ -333,6 +356,12 @@ public class BodyWeightScaleTableView extends View {
 
     public void setBodyWeightUpdateListener(BodyWeightUpdateListener bodyWeightUpdateListener) {
         mBodyWeightUpdateListener = bodyWeightUpdateListener;
+    }
+
+    private void initForegroundPaint(int w) {
+        mForegroundPaint = new Paint();
+        mForegroundPaint.setShader(new LinearGradient(0, 0, w / 2, 0, 0X00FFFFFF, 0XFFFFFFFF, Shader.TileMode.MIRROR));
+        mForegroundPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
     }
 
     private class FlingAnimUpdateListener implements ValueAnimator.AnimatorUpdateListener {
