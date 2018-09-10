@@ -13,7 +13,7 @@
 
 ### 大概的实现过程
 **首先放上所有成员变量**
-
+```
     /**
      * 最大的滑动速度
      */
@@ -100,10 +100,10 @@
     private ObjectAnimator mFlingAnim;
     private FlingAnimUpdateListener mFlingAnimUpdateListener = new FlingAnimUpdateListener();
     private BodyWeightUpdateListener mBodyWeightUpdateListener;
-
+```
 
  1. 实例化画笔，在onDraw中绘制最基本的元素
- 
+ ```
   //画出当前公斤数
   int textLine = centerY - dp2pix(50);
         mWeightTextPain.setTextSize(textSizeWeight);
@@ -115,8 +115,9 @@
         //画刻度基准线
         mScaleLinePain.setStrokeWidth(lineWidthBase);
         canvas.drawLine(0, centerY, canvasWidth, centerY, mScaleLinePain);
+  ```
  2. 绘制刻度线
- 
+ ```
   //画刻度线
         int everyScaleG = ONE_KG / scaleTableGNum;
         //这个求余，是为了得到当前体重数和最小刻度的偏差，用于接下来绘制的时候进行位置修正
@@ -156,8 +157,9 @@
             leftLineX -= scaleTableGWidth;
             rightLineX += scaleTableGWidth;
         }
+ ```
  3. 绘制遮罩层，用来做两边透明度的效果
- 
+ ```
         //绘制遮罩层，用来进行两端透明度的变化
         if (mForegroundPaint == null) {
             initForegroundPaint(canvasWidth);
@@ -170,8 +172,9 @@
    mForegroundPaint.setShader(new LinearGradient(0, 0, w / 2, 0, 0X00FFFFFF, 0XFFFFFFFF, Shader.TileMode.MIRROR));
          mForegroundPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
      }
+  ```
  4. 实例化手势识别器GestureDetector，用它来接管View的onTouchEvent，并在onScroll和onFling中作出对应动作
- 
+ ```
   @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
                 if (mFlingAnim != null) {
@@ -228,9 +231,11 @@
          mFlingAnim.addUpdateListener(mFlingAnimUpdateListener);
          mFlingAnim.start();
     }
- 
+ ```
 ###实现思想
-本Demo是使用Canvas进行绘制刻度，为了适配不同宽度的屏幕，所以小的刻度使用从中心指针处向两边绘制到屏幕边界的方法，使用GestureDetector接管View的触摸事件，在onScroll中修改体重值并不断进行重绘，达到刻度尺滚动的效果。并在onFling中接收抛动的事件，开启一个属性动画达到平滑的效果。由于我没有在GestureDetector中找到能响应不fling的up事件，所以要自己手动在onTouchEvent中写ACIONT_UP时的动作
+本Demo是使用Canvas进行绘制刻度，为了适配不同宽度的屏幕，所以小的刻度使用从中心指针处向两边绘制到屏幕边界的方法，使用GestureDetector接管View的触摸事件，在onScroll中修改体重值并不断进行重绘，达到刻度尺滚动的效果。并在onFling中接收抛动的事件，开启一个属性动画达到平滑的效果。由于我没有在
+GestureDetector中找到能响应不fling的up事件，所以要自己手动在onTouchEvent中写ACIONT_UP时的动作
+```
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         mGesture.onTouchEvent(event);
@@ -241,5 +246,6 @@
         }
         return true;
     }
+```
 http://hencoder.com/ui-1-2/)
 https://github.com/Pro47x/BodyWeightScaleTableView    
